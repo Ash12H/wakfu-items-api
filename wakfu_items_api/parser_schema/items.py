@@ -1,6 +1,16 @@
 from pydantic import BaseModel, RootModel
-from typing import Optional, List
-from pydantic import Field
+from typing import Optional
+
+
+class MultiLang(BaseModel):
+    fr: str = ""
+    en: str = ""
+    es: str = ""
+    pt: str = ""
+
+
+Title = MultiLang
+Description = MultiLang
 
 
 class BaseParameters(BaseModel):
@@ -34,50 +44,48 @@ class EffectDefinition(BaseModel):
     id: int
     actionId: int
     areaShape: int
-    areaSize: list
+    areaSize: list[int]
     params: list[float]
 
 
-class EffectContent(BaseModel):
-    definition: EffectDefinition
-
-
 class Effect(BaseModel):
-    effect: EffectContent
+    definition: EffectDefinition
+    description: Optional[Description] = None
 
 
-class Item(BaseModel):
+class EquipEffect(BaseModel):
+    effect: Effect
+
+
+class UseEffects(BaseModel):
+    effect: Effect
+
+
+class UseCriticalEffects(BaseModel):
+    effect: Effect
+
+
+class ItemParameter(BaseModel):
     id: int
     level: int
     baseParameters: BaseParameters
     useParameters: UseParameters
     graphicParameters: GraphicParameters
-    properties: list
+    properties: list[int]
 
 
 class Definition(BaseModel):
-    item: Item
-    useEffects: list
-    useCriticalEffects: list
-    equipEffects: list[Effect]
+    item: ItemParameter
+    useEffects: list[UseEffects]
+    useCriticalEffects: list[UseCriticalEffects]
+    equipEffects: list[EquipEffect]
 
 
-class MultiLang(BaseModel):
-    fr: str = ""
-    en: str = ""
-    es: str = ""
-    pt: str = ""
-
-
-Title = MultiLang
-Description = MultiLang
-
-
-class ItemSchema(BaseModel):
+class Item(BaseModel):
     definition: Definition
-    title: Title = Field(default_factory=MultiLang)
-    description: Description = Field(default_factory=MultiLang)
+    title: Optional[Title] = None
+    description: Optional[Description] = None
 
 
-class ItemFileSchema(RootModel):
-    root: list[ItemSchema]
+class ItemFile(RootModel):
+    root: list[Item]
