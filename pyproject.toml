@@ -5,7 +5,7 @@ description = ""
 authors = [{ name = "Ash", email = "lehodey.jules@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = ["requests", "pydantic", "sqlalchemy"]
+dependencies = ["requests", "tdqm", "sqlmodel"]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

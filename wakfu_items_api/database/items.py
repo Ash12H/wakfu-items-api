@@ -3,15 +3,14 @@ from sqlmodel import JSON, Column, Field, Relationship, SQLModel
 
 
 class Item(SQLModel, table=True):
-    id: int = Field(primary_key=True, index=True)
-    title: Optional["Title"] = Relationship()
+    id: int = Field(primary_key=True)
+    title: Optional["ItemTitle"] = Relationship()
     description: Optional["ItemDescription"] = Relationship()
-    definition: "Definition" = Relationship()
+    definition: "ItemDefinition" = Relationship()
 
 
-class Title(SQLModel, table=True):
-    id: int = Field(primary_key=True, index=True)
-    item_id: int = Field(foreign_key="item.id")
+class ItemTitle(SQLModel, table=True):
+    id: int = Field(primary_key=True, foreign_key="item.id")
     fr: Optional[str]
     en: Optional[str]
     es: Optional[str]
@@ -19,17 +18,15 @@ class Title(SQLModel, table=True):
 
 
 class ItemDescription(SQLModel, table=True):
-    id: int = Field(primary_key=True, index=True)
-    item_id: Optional[int] = Field(foreign_key="item.id")
+    id: int = Field(primary_key=True, foreign_key="item.id")
     fr: Optional[str]
     en: Optional[str]
     es: Optional[str]
     pt: Optional[str]
 
 
-class Definition(SQLModel, table=True):
-    id: int = Field(primary_key=True, index=True)
-    item_id: int = Field(foreign_key="item.id")
+class ItemDefinition(SQLModel, table=True):
+    id: int = Field(primary_key=True, foreign_key="item.id")
     useEffects: List["UseEffects"] = Relationship()
     useCriticalEffects: List["UseCriticalEffects"] = Relationship()
     equipEffects: List["EquipEffect"] = Relationship()
@@ -37,25 +34,25 @@ class Definition(SQLModel, table=True):
 
 
 class UseEffects(SQLModel, table=True):
-    id: int = Field(primary_key=True, index=True)
-    definition_id: int = Field(foreign_key="definition.id")
-    effect: "Effect" = Relationship()
+    id: int = Field(primary_key=True)
+    definition_id: int = Field(foreign_key="itemdefinition.id")
+    effect: "ItemEffect" = Relationship()
 
 
 class UseCriticalEffects(SQLModel, table=True):
-    id: int = Field(primary_key=True, index=True)
-    definition_id: int = Field(foreign_key="definition.id")
-    effect: "Effect" = Relationship()
+    id: int = Field(primary_key=True)
+    definition_id: int = Field(foreign_key="itemdefinition.id")
+    effect: "ItemEffect" = Relationship()
 
 
 class EquipEffect(SQLModel, table=True):
-    id: int = Field(primary_key=True, index=True)
-    definition_id: int = Field(foreign_key="definition.id")
-    effect: "Effect" = Relationship()
+    id: int = Field(primary_key=True)
+    definition_id: int = Field(foreign_key="itemdefinition.id")
+    effect: "ItemEffect" = Relationship()
 
 
-class Effect(SQLModel, table=True):
-    id: int = Field(primary_key=True, index=True)
+class ItemEffect(SQLModel, table=True):
+    id: int = Field(primary_key=True)
     useEffects_id: Optional[int] = Field(foreign_key="useeffects.id")
     useCriticalEffects_id: Optional[int] = Field(foreign_key="usecriticaleffects.id")
     equipEffects_id: Optional[int] = Field(foreign_key="equipeffect.id")
@@ -64,8 +61,8 @@ class Effect(SQLModel, table=True):
 
 
 class EffectDefinition(SQLModel, table=True):
-    id: int = Field(primary_key=True, index=True)
-    effect_id: int = Field(foreign_key="effect.id")
+    id: int = Field(primary_key=True)
+    effect_id: int = Field(foreign_key="itemeffect.id")
     actionId: int
     areaShape: int
     areaSize: List[int] = Field(sa_column=Column(JSON))
@@ -76,8 +73,8 @@ class EffectDefinition(SQLModel, table=True):
 
 
 class EffectDescription(SQLModel, table=True):
-    id: int = Field(primary_key=True, index=True)
-    effect_id: Optional[int] = Field(foreign_key="effect.id")
+    id: int = Field(primary_key=True)
+    effect_id: Optional[int] = Field(foreign_key="itemeffect.id")
     fr: Optional[str]
     en: Optional[str]
     es: Optional[str]
@@ -85,8 +82,7 @@ class EffectDescription(SQLModel, table=True):
 
 
 class ItemParameters(SQLModel, table=True):
-    id: int = Field(primary_key=True, index=True)
-    definition_id: int = Field(foreign_key="definition.id")
+    id: int = Field(primary_key=True, foreign_key="itemdefinition.id")
     baseParameters: "BaseParameters" = Relationship()
     useParameters: "UseParameters" = Relationship()
     graphicParameters: "GraphicParameters" = Relationship()
@@ -97,8 +93,7 @@ class ItemParameters(SQLModel, table=True):
 
 
 class BaseParameters(SQLModel, table=True):
-    id: int = Field(primary_key=True, index=True)
-    itemParameters_id: int = Field(foreign_key="itemparameters.id")
+    id: int = Field(primary_key=True, foreign_key="itemparameters.id")
     itemTypeId: int
     itemSetId: int
     rarity: int
@@ -108,8 +103,7 @@ class BaseParameters(SQLModel, table=True):
 
 
 class UseParameters(SQLModel, table=True):
-    id: int = Field(primary_key=True, index=True)
-    itemParameters_id: int = Field(foreign_key="itemparameters.id")
+    id: int = Field(primary_key=True, foreign_key="itemparameters.id")
     useCostAp: int
     useCostMp: int
     useCostWp: int
@@ -123,7 +117,77 @@ class UseParameters(SQLModel, table=True):
 
 
 class GraphicParameters(SQLModel, table=True):
-    id: int = Field(primary_key=True, index=True)
-    itemParameters_id: int = Field(foreign_key="itemparameters.id")
+    id: int = Field(primary_key=True, foreign_key="itemparameters.id")
     gfxId: int
     femaleGfxId: int
+
+
+def create_item_from_dict(data: dict) -> Item:
+    """
+    Creates an Item instance from a dictionary. This function processes
+    the data received from the JSON file provided by the Wakfu team and
+    maps it to the corresponding SQLModel objects.
+    """
+    item = Item(
+        id=data["definition"]["item"]["id"],
+        title=ItemTitle(
+            fr=data.get("title", {}).get("fr"),
+            en=data.get("title", {}).get("en"),
+            es=data.get("title", {}).get("es"),
+            pt=data.get("title", {}).get("pt"),
+        ),
+        description=ItemDescription(
+            fr=data.get("description", {}).get("fr"),
+            en=data.get("description", {}).get("en"),
+            es=data.get("description", {}).get("es"),
+            pt=data.get("description", {}).get("pt"),
+        ),
+        definition=ItemDefinition(
+            useEffects=[
+                UseEffects(
+                    effect=ItemEffect(
+                        description=EffectDescription(**effect.get("description", {}))
+                    )
+                )
+                for effect in data.get("definition", {}).get("useEffects", [])
+            ],
+            useCriticalEffects=[
+                UseCriticalEffects(
+                    effect=ItemEffect(
+                        description=EffectDescription(**effect.get("description", {}))
+                    )
+                )
+                for effect in data.get("definition", {}).get("useCriticalEffects", [])
+            ],
+            equipEffects=[
+                EquipEffect(
+                    effect=ItemEffect(
+                        description=EffectDescription(**effect.get("description", {}))
+                    )
+                )
+                for effect in data.get("definition", {}).get("equipEffects", [])
+            ],
+            item=ItemParameters(
+                baseParameters=BaseParameters(
+                    **data.get("definition", {})
+                    .get("item", {})
+                    .get("baseParameters", {})
+                ),
+                useParameters=UseParameters(
+                    **data.get("definition", {})
+                    .get("item", {})
+                    .get("useParameters", {})
+                ),
+                graphicParameters=GraphicParameters(
+                    **data.get("definition", {})
+                    .get("item", {})
+                    .get("graphicParameters", {})
+                ),
+                properties=data.get("definition", {})
+                .get("item", {})
+                .get("properties", []),
+            ),
+        ),
+    )
+
+    return item
