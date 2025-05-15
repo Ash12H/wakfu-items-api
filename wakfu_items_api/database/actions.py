@@ -5,7 +5,7 @@ from sqlmodel import Field, Relationship, SQLModel
 class Action(SQLModel, table=True):
     id: int = Field(primary_key=True, index=True)
     effect: str
-    description: Optional["ActionDescription"] = Relationship()
+    description: Optional["ActionDescription"] = Relationship(back_populates="action")
 
 
 class ActionDescription(SQLModel, table=True):
@@ -14,6 +14,7 @@ class ActionDescription(SQLModel, table=True):
     en: Optional[str]
     es: Optional[str]
     pt: Optional[str]
+    action: Optional[Action] = Relationship(back_populates="description")
 
 
 def create_action_from_dict(data: dict) -> Action:

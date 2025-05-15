@@ -3,46 +3,38 @@ from sqlmodel import JSON, Column, Field, Relationship, SQLModel
 
 
 class EquipmentItemType(SQLModel, table=True):
-    """
-    Represents an equipment item type in the database.
-    """
-
     id: int = Field(primary_key=True, index=True)
     parentId: int
     equipmentPositions: List[str] = Field(sa_column=Column(JSON))
     equipmentDisabledPositions: List[str] = Field(sa_column=Column(JSON))
     isRecyclable: bool
     isVisibleInAnimation: bool
-    title: "EquipmentItemTypeTitle" = Relationship()
+    title: Optional["EquipmentItemTypeTitle"] = Relationship()
 
 
 class EquipmentItemTypeTitle(SQLModel, table=True):
-    """
-    Represents the title of an equipment item type in the database.
-    """
-
     id: int = Field(primary_key=True, index=True, foreign_key="equipmentitemtype.id")
     fr: Optional[str]
     en: Optional[str]
-    de: Optional[str]
     es: Optional[str]
+    pt: Optional[str]
 
 
 def create_equipment_item_type_from_dict(data: dict) -> EquipmentItemType:
-    """
-    Create an Action object from a dictionary.
-    """
+    title_data = data.get("title", {})
+    definition = data.get("definition", {})
     return EquipmentItemType(
-        id=data["definition"]["id"],
-        parentId=data["definition"]["parentId"],
-        equipmentPositions=data["definition"]["equipmentPositions"],
-        equipmentDisabledPositions=data["definition"]["equipmentDisabledPositions"],
-        isRecyclable=data["definition"]["isRecyclable"],
-        isVisibleInAnimation=data["definition"]["isVisibleInAnimation"],
+        id=definition["id"],
+        parentId=definition["parentId"],
+        equipmentPositions=definition.get("equipmentPositions", []),
+        equipmentDisabledPositions=definition.get("equipmentDisabledPositions", []),
+        isRecyclable=definition.get("isRecyclable", False),
+        isVisibleInAnimation=definition.get("isVisibleInAnimation", False),
         title=EquipmentItemTypeTitle(
-            fr=data["title"].get("fr"),
-            en=data["title"].get("en"),
-            de=data["title"].get("de"),
-            es=data["title"].get("es"),
+            id=definition["id"],
+            fr=title_data.get("fr"),
+            en=title_data.get("en"),
+            es=title_data.get("es"),
+            pt=title_data.get("pt"),
         ),
     )

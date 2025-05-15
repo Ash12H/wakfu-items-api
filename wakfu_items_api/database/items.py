@@ -124,24 +124,37 @@ class GraphicParameters(SQLModel, table=True):
 
 def create_item_from_dict(data: dict) -> Item:
     """
-    Creates an Item instance from a dictionary. This function processes
-    the data received from the JSON file provided by the Wakfu team and
-    maps it to the corresponding SQLModel objects.
+    Crée un objet Item à partir d'un dictionnaire, robuste aux champs manquants.
     """
+    title_data = data.get("title", {})
+    desc_data = data.get("description", {})
+    definition = data.get("definition", {})
+    item_data = definition.get("item", {})
+
+    # Sous-objets de paramètres
+    base_params = item_data.get("baseParameters", {})
+    use_params = item_data.get("useParameters", {})
+    graphic_params = item_data.get("graphicParameters", {})
+
+    # Création de l'objet Item
     item = Item(
-        id=data["definition"]["item"]["id"],
+        id=item_data.get("id", None),
         title=ItemTitle(
-            fr=data.get("title", {}).get("fr"),
-            en=data.get("title", {}).get("en"),
-            es=data.get("title", {}).get("es"),
-            pt=data.get("title", {}).get("pt"),
-        ),
+            fr=title_data.get("fr"),
+            en=title_data.get("en"),
+            es=title_data.get("es"),
+            pt=title_data.get("pt"),
+        )
+        if title_data
+        else None,
         description=ItemDescription(
-            fr=data.get("description", {}).get("fr"),
-            en=data.get("description", {}).get("en"),
-            es=data.get("description", {}).get("es"),
-            pt=data.get("description", {}).get("pt"),
-        ),
+            fr=desc_data.get("fr"),
+            en=desc_data.get("en"),
+            es=desc_data.get("es"),
+            pt=desc_data.get("pt"),
+        )
+        if desc_data
+        else None,
         definition=ItemDefinition(
             useEffects=[
                 UseEffects(
@@ -149,7 +162,7 @@ def create_item_from_dict(data: dict) -> Item:
                         description=EffectDescription(**effect.get("description", {}))
                     )
                 )
-                for effect in data.get("definition", {}).get("useEffects", [])
+                for effect in definition.get("useEffects", []) or []
             ],
             useCriticalEffects=[
                 UseCriticalEffects(
@@ -157,7 +170,7 @@ def create_item_from_dict(data: dict) -> Item:
                         description=EffectDescription(**effect.get("description", {}))
                     )
                 )
-                for effect in data.get("definition", {}).get("useCriticalEffects", [])
+                for effect in definition.get("useCriticalEffects", []) or []
             ],
             equipEffects=[
                 EquipEffect(
@@ -165,29 +178,20 @@ def create_item_from_dict(data: dict) -> Item:
                         description=EffectDescription(**effect.get("description", {}))
                     )
                 )
-                for effect in data.get("definition", {}).get("equipEffects", [])
+                for effect in definition.get("equipEffects", []) or []
             ],
             item=ItemParameters(
-                baseParameters=BaseParameters(
-                    **data.get("definition", {})
-                    .get("item", {})
-                    .get("baseParameters", {})
-                ),
-                useParameters=UseParameters(
-                    **data.get("definition", {})
-                    .get("item", {})
-                    .get("useParameters", {})
-                ),
-                graphicParameters=GraphicParameters(
-                    **data.get("definition", {})
-                    .get("item", {})
-                    .get("graphicParameters", {})
-                ),
-                properties=data.get("definition", {})
-                .get("item", {})
-                .get("properties", []),
-            ),
-        ),
+                baseParameters=BaseParameters(**base_params) if base_params else None,
+                useParameters=UseParameters(**use_params) if use_params else None,
+                graphicParameters=GraphicParameters(**graphic_params)
+                if graphic_params
+                else None,
+                properties=item_data.get("properties", []),
+            )
+            if item_data
+            else None,
+        )
+        if definition
+        else None,
     )
-
     return item
