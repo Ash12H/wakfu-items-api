@@ -13,7 +13,6 @@ def extract_all_files(output_directory="."):
     categories = [category.value for category in Categories]
     version = get_current_version()
 
-    # Créer le répertoire de sortie s'il n'existe pas
     os.makedirs(output_directory, exist_ok=True)
 
     for category in categories:
@@ -28,7 +27,10 @@ def extract_all_files(output_directory="."):
     print("All files extracted successfully.")
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """
+    Main function to run the script.
+    """
     parser = argparse.ArgumentParser(
         description="Extract all files from the Wakfu API."
     )
@@ -41,3 +43,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     extract_all_files(output_directory=args.output_directory)
+
+
+if __name__ == "__main__":
+    main()

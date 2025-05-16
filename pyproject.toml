@@ -12,7 +12,8 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-extract-all-files = "scripts.extract_all_files:extract_all_files"
+extract-all-files = "scripts.extract_all_files:main"
+generate-database = "scripts.generate_database:main"
 
 [tool.poetry.group.dev.dependencies]
 graphviz = "*"

@@ -63,7 +63,7 @@ class ItemEffect(SQLModel, table=True):
 class EffectDefinition(SQLModel, table=True):
     id: int = Field(primary_key=True)
     effect_id: int = Field(foreign_key="itemeffect.id")
-    actionId: int
+    actionId: int = Field(foreign_key="action.id")
     areaShape: int
     areaSize: List[int] = Field(sa_column=Column(JSON))
     params: List[float] = Field(sa_column=Column(JSON))
@@ -94,7 +94,7 @@ class ItemParameters(SQLModel, table=True):
 
 class BaseParameters(SQLModel, table=True):
     id: int = Field(primary_key=True, foreign_key="itemparameters.id")
-    itemTypeId: int
+    itemTypeId: int = Field(foreign_key="itemtype.id")
     itemSetId: int
     rarity: int
     bindType: int
