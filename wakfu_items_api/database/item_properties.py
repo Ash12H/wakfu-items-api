@@ -1,5 +1,4 @@
-from typing import Optional
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, SQLModel
 
 
 class ItemProperty(SQLModel, table=True):
@@ -7,12 +6,6 @@ class ItemProperty(SQLModel, table=True):
     name: str
     description: str
 
-
-def create_item_property_from_dict(data: dict) -> ItemProperty:
-    """
-    Create an ItemProperty object from a dictionary.
-    """
-    item_property = ItemProperty(
-        id=data["id"], name=data["name"], description=data["description"]
-    )
-    return item_property
+    @classmethod
+    def from_wakfu_api(cls, data: dict) -> "ItemProperty":
+        return cls.model_validate(data)

@@ -11,6 +11,32 @@ class ItemType(SQLModel, table=True):
     isVisibleInAnimation: bool
     title: Optional["ItemTypeTitle"] = Relationship()
 
+    @classmethod
+    def from_wakfu_api(cls, data: dict) -> "ItemType":
+        definition = data.get("definition", {})
+        title_data = data.get("title", {})
+        item_type_id = definition.get("id")
+
+        item_type_title = None
+        if title_data:
+            item_type_title = ItemTypeTitle(
+                id=item_type_id,
+                fr=title_data.get("fr"),
+                en=title_data.get("en"),
+                es=title_data.get("es"),
+                pt=title_data.get("pt"),
+            )
+
+        return cls(
+            id=item_type_id,
+            parentId=definition.get("parentId"),
+            equipmentPositions=definition.get("equipmentPositions", []),
+            equipmentDisabledPositions=definition.get("equipmentDisabledPositions", []),
+            isRecyclable=definition.get("isRecyclable", False),
+            isVisibleInAnimation=definition.get("isVisibleInAnimation", False),
+            title=item_type_title,
+        )
+
 
 class ItemTypeTitle(SQLModel, table=True):
     id: int = Field(primary_key=True, index=True, foreign_key="itemtype.id")
@@ -18,23 +44,3 @@ class ItemTypeTitle(SQLModel, table=True):
     en: Optional[str]
     es: Optional[str]
     pt: Optional[str]
-
-
-def create_item_type_from_dict(data: dict) -> ItemType:
-    title_data = data.get("title", {})
-    definition = data.get("definition", {})
-    return ItemType(
-        id=definition["id"],
-        parentId=definition.get("parentId", None),
-        equipmentPositions=definition.get("equipmentPositions", []),
-        equipmentDisabledPositions=definition.get("equipmentDisabledPositions", []),
-        isRecyclable=definition.get("isRecyclable", False),
-        isVisibleInAnimation=definition.get("isVisibleInAnimation", False),
-        title=ItemTypeTitle(
-            id=definition["id"],
-            fr=title_data.get("fr"),
-            en=title_data.get("en"),
-            es=title_data.get("es"),
-            pt=title_data.get("pt"),
-        ),
-    )

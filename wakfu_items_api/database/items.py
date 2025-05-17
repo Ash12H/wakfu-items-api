@@ -68,9 +68,6 @@ class EffectDefinition(SQLModel, table=True):
     areaSize: List[int] = Field(sa_column=Column(JSON))
     params: List[float] = Field(sa_column=Column(JSON))
 
-    class Config:
-        arbitrary_types_allowed = True
-
 
 class EffectDescription(SQLModel, table=True):
     id: int = Field(primary_key=True)
@@ -87,9 +84,7 @@ class ItemParameters(SQLModel, table=True):
     useParameters: "UseParameters" = Relationship()
     graphicParameters: "GraphicParameters" = Relationship()
     properties: List[int] = Field(sa_column=Column(JSON))
-
-    class Config:
-        arbitrary_types_allowed = True
+    level: int
 
 
 class BaseParameters(SQLModel, table=True):
@@ -122,76 +117,21 @@ class GraphicParameters(SQLModel, table=True):
     femaleGfxId: int
 
 
+# TODO(Jules): Revoir cette fonction, elle est incomplete
 def create_item_from_dict(data: dict) -> Item:
     """
     Crée un objet Item à partir d'un dictionnaire, robuste aux champs manquants.
     """
-    title_data = data.get("title", {})
-    desc_data = data.get("description", {})
-    definition = data.get("definition", {})
-    item_data = definition.get("item", {})
+    id = data["definition"]["item"]["id"]
 
-    # Sous-objets de paramètres
-    base_params = item_data.get("baseParameters", {})
-    use_params = item_data.get("useParameters", {})
-    graphic_params = item_data.get("graphicParameters", {})
+    title = ItemTitle(id=id, **data["title"]) if "title" in data else None
 
-    # Création de l'objet Item
-    item = Item(
-        id=item_data.get("id", None),
-        title=ItemTitle(
-            fr=title_data.get("fr"),
-            en=title_data.get("en"),
-            es=title_data.get("es"),
-            pt=title_data.get("pt"),
-        )
-        if title_data
-        else None,
-        description=ItemDescription(
-            fr=desc_data.get("fr"),
-            en=desc_data.get("en"),
-            es=desc_data.get("es"),
-            pt=desc_data.get("pt"),
-        )
-        if desc_data
-        else None,
-        definition=ItemDefinition(
-            useEffects=[
-                UseEffects(
-                    effect=ItemEffect(
-                        description=EffectDescription(**effect.get("description", {}))
-                    )
-                )
-                for effect in definition.get("useEffects", []) or []
-            ],
-            useCriticalEffects=[
-                UseCriticalEffects(
-                    effect=ItemEffect(
-                        description=EffectDescription(**effect.get("description", {}))
-                    )
-                )
-                for effect in definition.get("useCriticalEffects", []) or []
-            ],
-            equipEffects=[
-                EquipEffect(
-                    effect=ItemEffect(
-                        description=EffectDescription(**effect.get("description", {}))
-                    )
-                )
-                for effect in definition.get("equipEffects", []) or []
-            ],
-            item=ItemParameters(
-                baseParameters=BaseParameters(**base_params) if base_params else None,
-                useParameters=UseParameters(**use_params) if use_params else None,
-                graphicParameters=GraphicParameters(**graphic_params)
-                if graphic_params
-                else None,
-                properties=item_data.get("properties", []),
-            )
-            if item_data
-            else None,
-        )
-        if definition
-        else None,
+    description = (
+        ItemDescription(id=id, **data["description"]) if "description" in data else None
     )
-    return item
+
+    return Item(
+        id=id,
+        title=title,
+        description=description,
+    )

@@ -17,3 +17,4 @@ generate-database = "scripts.generate_database:main"
 
 [tool.poetry.group.dev.dependencies]
 graphviz = "*"
+ruff = "*"
