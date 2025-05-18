@@ -1,24 +1,19 @@
 import json
 from wakfu_items_api.categories import Categories
-from wakfu_items_api.database.actions import create_action_from_dict
-from wakfu_items_api.database.item_types import create_item_type_from_dict
-from wakfu_items_api.database.item_properties import create_item_property_from_dict
-from wakfu_items_api.database.states import create_state_from_dict
-from wakfu_items_api.database.items import create_item_from_dict
-from wakfu_items_api.extract_file import extract_file
-from wakfu_items_api.version import get_current_version
+from wakfu_items_api.database import Action, ItemProperty, ItemType, State, Item
+from wakfu_items_api.extract_file import extract_file, get_current_version
 from pathlib import Path
 import argparse
 from sqlmodel import SQLModel, Session, create_engine
 from tqdm import tqdm
 
 ITEMS_CATEGORIES = {
-    Categories.actions: create_action_from_dict,
-    Categories.itemTypes: create_item_type_from_dict,
-    Categories.equipmentItemTypes: create_item_type_from_dict,
-    Categories.itemProperties: create_item_property_from_dict,
-    Categories.states: create_state_from_dict,
-    Categories.items: create_item_from_dict,
+    Categories.actions: Action,
+    Categories.itemTypes: ItemType,
+    Categories.equipmentItemTypes: ItemType,
+    Categories.itemProperties: ItemProperty,
+    Categories.states: State,
+    Categories.items: Item,
 }
 """Order of categories to be extracted. Used to generate tables in the database."""
 
@@ -59,14 +54,14 @@ def generate_database(
     engine = create_engine(DATABASE_URL, echo=False)
     SQLModel.metadata.create_all(engine)
 
-    for category, generate_function in ITEMS_CATEGORIES.items():
+    for category, cls in ITEMS_CATEGORIES.items():
         if input_path is None:
             data = extract_file(category)
         else:
             with (Path(input_path) / generate_filepath(category)).open("r") as file:
                 data = json.load(file)
         for element in tqdm(data, desc=f"Processing {category}"):
-            add_to_db(generate_function(element), engine, verbose=verbose)
+            add_to_db(cls.from_wakfu_api(element), engine, verbose=verbose)
 
 
 def main() -> None:
